@@ -1,7 +1,7 @@
 
-import java.time.{LocalDateTime, ZoneId, ZoneOffset}
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
+import java.time.{LocalDateTime, ZoneOffset}
 
 import Day4.Event.Event
 
@@ -20,6 +20,23 @@ object Day4 extends App {
 
   def part1(lines: List[String]): Int = {
     val records = lines.map(GuardRecord(_))
+    val guardSleepMinutes = calculateGuardSleepMinutes(records)
+
+    val (guardId, sleepMinutes) = guardSleepMinutes.toList.maxBy { case (_, minutes) => minutes.size }
+    val minuteMostAsleep = sleepMinutes.map(_.getMinute).groupBy(identity).mapValues(_.size).maxBy { case (_, count) => count }
+    guardId * minuteMostAsleep._1
+  }
+
+  def part2(lines: List[String]): Int = {
+    val records = lines.map(GuardRecord(_))
+    val guardSleepMinutes = calculateGuardSleepMinutes(records)
+
+    val maxMinutes = guardSleepMinutes.mapValues(list => list.map(_.getMinute).groupBy(identity).mapValues(_.size).maxBy { case (_, num) => num })
+    val (guardId, (minute, _)) = maxMinutes.maxBy { case (_, (_, num)) => num }
+    guardId * minute
+  }
+
+  private def calculateGuardSleepMinutes(records: List[GuardRecord]): Map[Int, List[LocalDateTime]] = {
     val chronologicalRecords = records.sortBy(_.timestamp.toEpochSecond(ZoneOffset.UTC))
     val guardSleepMinutes = mutable.Map[Int, ListBuffer[LocalDateTime]]()
 
@@ -42,14 +59,7 @@ object Day4 extends App {
           }
       }
     }
-
-    val (guardId, sleepMinutes) = guardSleepMinutes.toList.maxBy { case (_, minutes) => minutes.size }
-    val minuteMostAsleep = sleepMinutes.map(_.getMinute).groupBy(identity).mapValues(_.size).maxBy { case (_, count) => count }
-    guardId * minuteMostAsleep._1
-  }
-
-  def part2(lines: List[String]): Int = {
-    0
+    guardSleepMinutes.mapValues(buffer => collection.immutable.List(buffer: _*)).toMap
   }
 
   case class GuardRecord(id: Option[Int], timestamp: LocalDateTime, event: Event)
