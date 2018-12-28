@@ -14,34 +14,53 @@ object Day7 extends App {
     val pattern = "Step ([A-Z]) must be finished before step ([A-Z]) can begin.".r
     val edges = lines.map { case pattern(first, second) => (first, second) }
 
-    val terminalInstruction = (Set(edges.map(_._2): _*) diff Set(edges.map(_._1): _*)).head
+    // Map of each step to the set of steps that come next
+    val adjacencyLists = mutable.Map[String, mutable.Set[String]]()
+    // Map of each step to the set of prerequisite steps
+    val prerequisiteLists = mutable.Map[String, mutable.Set[String]]()
 
-    val adjacencyList = mutable.Map[String, mutable.Set[String]]()
-    for (edge <- edges) {
-      if (adjacencyList.contains(edge._1)) {
-        adjacencyList(edge._1) += edge._2
+    for ((step, nextStep) <- edges) {
+      if (adjacencyLists.contains(step)) {
+        adjacencyLists(step) += nextStep
       } else {
-        adjacencyList(edge._1) = mutable.Set[String](edge._2)
+        adjacencyLists(step) = mutable.Set(nextStep)
+      }
+      if (prerequisiteLists.contains(nextStep)) {
+        prerequisiteLists(nextStep) += step
+      } else {
+        prerequisiteLists(nextStep) = mutable.Set(step)
       }
     }
 
-    def run(instruction: String): String = {
-      // Find all instructions that need to be completed before this instruction
-      val beforeInstructions = adjacencyList.toMap.filter { case (_, list) => list.contains(instruction) }.keys
-      ""
+    // Start with the instructions that have no instruction preceding them
+    val startSteps = (Set(edges.map(_._1): _*) diff Set(edges.map(_._2): _*)).toList.sorted
+
+    val stepQueue = mutable.PriorityQueue[String](startSteps: _*)(implicitly[Ordering[String]].reverse)
+    val stepBuffer = ListBuffer[String]()
+    val orderedSteps = ListBuffer[String]()
+    val completed = mutable.Set[String]()
+    while (stepQueue.nonEmpty) {
+      val step = stepQueue.dequeue()
+      if (!completed.contains(step) && prerequisiteLists.getOrElse(step, completed).subsetOf(completed)) {
+        orderedSteps.append(step)
+        completed += step
+        // The steps that could not be completed need to be put back on the queue
+        stepQueue.enqueue(stepBuffer:_*)
+        stepBuffer.clear()
+        if (adjacencyLists.contains(step)) {
+          stepQueue.enqueue(adjacencyLists(step).toSeq: _*)
+        }
+      } else {
+        // Save the steps that can't be completed yet so they can be put back on the queue later
+        stepBuffer.append(step)
+      }
     }
 
-    run(terminalInstruction)
-
-    ""
+    orderedSteps.mkString("")
   }
 
   def part2(lines: List[String]): String = {
     ""
-  }
-
-  case class Node(name: Char, children: ListBuffer[Char]) {
-
   }
 
 }
