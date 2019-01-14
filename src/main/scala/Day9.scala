@@ -8,10 +8,10 @@ object Day9 extends App {
   val answer1 = run(numPlayers, lastMarble)
   println(s"Part 1: $answer1")
   val answer2 = run(numPlayers, lastMarble * 100)
-  println(s"Part 1: $answer2")
+  println(s"Part 2: $answer2")
 
-  def run(numPlayers: Int, lastMarble: Int): Int = {
-    val playerScores = Array.fill[Int](numPlayers)(0)
+  def run(numPlayers: Int, lastMarble: Int): Long = {
+    val playerScores = Array.fill[Long](numPlayers)(0)
     var nextMarble = 0
     var nextMarblePosition = 0
     val circle = ListBuffer[Int]()
