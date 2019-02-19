@@ -7,7 +7,9 @@ object Day13 extends App {
 
   val lines = Source.fromResource("day_13_input.txt").getLines().toList
   val answer1 = part1(lines)
-  println(s"Part 1 : $answer1")
+  println(s"Part 1: $answer1")
+  val answer2 = part2(lines)
+  println(s"Part 2: $answer2")
 
   def part1(lines: List[String]): Position = {
     val (track, cars) = parseInput(lines)
@@ -23,6 +25,46 @@ object Day13 extends App {
     }
     collisionPosition.get
   }
+
+  def part2(lines: List[String]): Position = {
+    val (track, cars) = parseInput(lines)
+    while (cars.filterNot(_.collided).size > 1) {
+      for (car <- cars.sorted) {
+        if (!car.collided) {
+          moveCar(car, track)
+          val collidingCars = cars.filterNot(_.collided).groupBy(_.position).filter { case (_, carsAtPos) => carsAtPos.length > 1 }.values.flatten
+          for (collidingCar <- collidingCars) {
+            collidingCar.collided = true
+          }
+        }
+      }
+    }
+    cars.filterNot(_.collided).head.position
+  }
+
+  private def printTrack(track: Array[Array[Rail]], cars: Seq[Car]): Unit = {
+    val carsByPosition = cars.groupBy(_.position)
+    for (row <- track.indices) {
+      println
+      for (column <- track(row).indices) {
+        val car = carsByPosition.get((column, row))
+        if (car.isDefined) {
+          print(car.get.head.direction.toString)
+        } else {
+          print(track(row)(column) match {
+            case Rail.None => " "
+            case Rail.Horizontal => "-"
+            case Rail.Vertical => "|"
+            case Rail.AscendingCorner => "/"
+            case Rail.DescendingCorner => "\\"
+            case Rail.Intersection => "+"
+          })
+        }
+      }
+    }
+    println()
+  }
+
 
   private def moveCar(car: Car, track: Array[Array[Rail]]): Unit = {
 
@@ -46,7 +88,6 @@ object Day13 extends App {
       }
     }
 
-    // move car
     car.move()
   }
 
@@ -88,7 +129,7 @@ object Day13 extends App {
   }
 
 
-  case class Car(var position: Position, var direction: Direction) extends Ordered[Car] {
+  case class Car(var position: Position, var direction: Direction, var collided: Boolean = false) extends Ordered[Car] {
     private var numTurns = 0L
 
     def handleIntersection(): Unit = {
