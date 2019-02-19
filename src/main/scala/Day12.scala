@@ -6,16 +6,17 @@ object Day12 extends App {
   private val initialState = "#....#.#....#....#######..##....###.##....##.#.#.##...##.##.#...#..###....#.#...##.###.##.###...#..#"
 
   val lines = Source.fromResource("day_12_input.txt").getLines().toList
-  val answer1 = run(lines, 20L)
-  println(s"Part 1: $answer1")
-  val answer2 = run(lines, 50000000000L)
-  println(s"Part 2: $answer2")
+  val numGenerations = 20
+  val answer = run(lines, numGenerations)
+  println(s"Part 1: $answer")
 
-  def run(lines: List[String], numGenerations: Long): Int = {
+  def run(lines: List[String], numGenerations: Int): Int = {
     val rules = lines.map(_.split(" => ")).map(arr => arr(0) -> arr(1).toCharArray()(0)).toMap
     var state = ("....." + initialState + ".....").toCharArray
     var startingIndex = -5
-    var generation = 0L
+    var generation = 0
+    var sum = 0
+    var lastSum = 0
     while (generation < numGenerations) {
       val nextState = ArrayBuffer[Char]()
       for (i <- 2 until state.length - 2) {
@@ -33,15 +34,18 @@ object Day12 extends App {
         nextState.append("." * (5 - lastPlant):_*)
       }
 
-      state = Array("..".toCharArray, nextState.toArray/*, "..".toCharArray*/).flatten
+      state = Array("..".toCharArray, nextState.toArray).flatten
+      lastSum = sum
+      sum = state
+        .zip(Stream from startingIndex)
+        .filter { case (value, _) => value equals '#'}
+        .map { case (_, index) => index }
+        .sum
+      println(s"Generation: $generation, sum: $sum, sum difference: ${sum - lastSum}")
       generation += 1
     }
 
-    state
-      .zip(Stream from startingIndex)
-      .filter { case (value, _) => value equals '#'}
-      .map { case (_, index) => index }
-      .sum
+    sum
   }
 
 }
